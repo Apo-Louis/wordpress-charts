@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: '{{ .Release.Name }}'
+  labels:
+    {{ include "wordpress.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.wordpress.hpa.enabled }}
+  replicas: {{ .Values.wordpress.replicaCount | default 1 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{ include "wordpress.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{ include "wordpress.labels" . | nindent 8 }}
+    spec:
+      {{- if .Values.wordpress.image.imagePullSecrets }}
+      imagePullSecrets:
+        - name: {{ .Values.wordpress.image.imagePullSecrets }}
+      {{- end }}
+      securityContext:
+        runAsUser: {{ .Values.wordpress.job.uid }}
+        runAsGroup: {{ .Values.wordpress.job.gid }}
+        fsGroup: {{ .Values.wordpress.job.gid }}
+      containers:
+        - name: wordpress
+          securityContext:
+          image: "{{ .Values.wordpress.image.repository }}:{{ .Values.wordpress.image.tag }}"
+          imagePullPolicy: {{ .Values.wordpress.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          {{- if .Values.wordpress.resources }}
+          resources:
+            {{- toYaml .Values.wordpress.resources | nindent 12 }}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: "{{ .Release.Name }}-secrets"
+          volumeMounts:
+            - name: wordpress-storage
+              mountPath: /var/www/html
+          livenessProbe:
+            httpGet:
+              path: /wp-admin/install.php
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /wp-admin/install.php
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+      volumes:
+        - name: wordpress-storage
+          persistentVolumeClaim:
+            claimName: "{{ .Release.Name }}-pvc"
+      {{- with .Values.wordpress.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.wordpress.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.wordpress.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

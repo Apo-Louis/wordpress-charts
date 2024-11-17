@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: "{{ .Release.Name }}-pvc"
+  labels:
+    {{- include "wordpress.labels" . | nindent 4 }}
+  annotations:
+    {{- if .Values.wordpress.pvc.annotations }}
+    {{ toYaml .Values.wordpress.pvc.annotations | indent 4 }}
+    {{- end }}
+spec:
+  accessModes:
+    - {{ .Values.wordpress.pvc.accessMode | default "ReadWriteMany" }}
+  resources:
+    requests:
+      storage: {{ .Values.wordpress.pvc.size }}
+  storageClassName: {{ .Values.wordpress.pvc.storageClass | default "default" }}
+
+  {{- if .Values.wordpress.pvc.volumeMode }}
+  volumeMode: {{ .Values.wordpress.pvc.volumeMode }}
+  {{- end }}

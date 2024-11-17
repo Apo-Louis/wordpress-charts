@@ -1,0 +1,14 @@
+# Chart.yaml
+apiVersion: v2
+name: wordpress
+description: A modular chart Helm for wordpress with light wp images (alpine fpm-apache) and shared PVC for the source code & plugins
+version: 1.0.0
+appVersion: "6.6.1"
+# Ajout de la dépendance MariaDB
+dependencies:
+  - name: mariadb
+    version: "11.5.2"  # Utilisez la dernière version stable
+    repository: https://charts.bitnami.com/bitnami
+    condition: mariadb.enabled
+    tags:
+      - wordpress-database

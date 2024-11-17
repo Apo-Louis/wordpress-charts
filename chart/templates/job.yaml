@@ -1,0 +1,73 @@
+# Job that clone custom plugins + install choosed official plugins
+# How to improve : Made it more secure for passwords
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: wordpress-init-job
+  labels:
+    {{- include "wordpress.labels" . | nindent 4 }}
+spec:
+  ttlSecondsAfterFinished: 100
+  backoffLimit: 10
+  template:
+    spec:
+      securityContext:
+        runAsUser: {{ .Values.wordpress.job.uid }}
+        runAsGroup: {{ .Values.wordpress.job.gid }}
+        fsGroup: {{ .Values.wordpress.job.gid }}
+      containers:
+        - name: "{{ .Release.Name }}-job"
+
+          image: {{ .Values.wordpress.job.image }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+
+
+             attempt=1
+             max_attempts=10
+             until mariadb-admin ping -h{{ .Release.Name }}-mariadb -u${MYSQL_USER} -p${MYSQL_PASSWORD}; do
+               if [ $attempt -eq $max_attempts ]; then
+                 echo "MariaDB connection failed after $max_attempts attempts"
+                 exit 1
+               fi
+               echo "Attempt $attempt: MariaDB not ready, waiting 20s..."
+               sleep 20
+               attempt=$((attempt + 1))
+             done
+
+              # Clone custom plugins repository
+              cd $ROOT_DIR
+
+              echo "Cloning custom wordpress repository..."
+              echo "Using repo: {{ .Values.github.wp_repo }} branch: {{ .Values.github.branch }}"
+              if ! git clone -b {{ .Values.github.branch }} https://${GIT_TOKEN}@github.com/{{ .Values.github.wp_repo }}.git; then
+                error_exit "Failed to clone custom plugins repository" 60
+              fi
+
+              cd /var/www/html
+
+              /tmp/wordpress/scripts/./plugin_install.sh
+
+          env:
+            - name: ROOT_DIR
+              value: /tmp
+            - name: GIT_TERMINAL_PROMPT
+              value: "0"
+          envFrom:
+            - secretRef:
+                name: "{{ .Release.Name }}-secrets"
+            - secretRef:
+                name: "{{ .Release.Name }}-github-secret"
+          volumeMounts:
+            - name: wordpress-storage
+              mountPath: /var/www/html
+            - name: temp-storage
+              mountPath: /tmp
+      volumes:
+        - name: wordpress-storage
+          persistentVolumeClaim:
+            claimName: "{{ .Release.Name }}-pvc"
+        - name: temp-storage
+          emptyDir: {}
+      restartPolicy: OnFailure

@@ -1,0 +1,80 @@
+github: # Needed for the job that clone custom plugins and mad share it via a PVC for all pods (lighter wp images)
+  wp_repo: "Apo-Louis/wordpress"
+  branch: "dev"
+  token: ""
+
+mariadb:
+  global:
+    defaultStorageClass: "nfs-client-db"
+  enabled: true
+  auth:
+    rootPassword: password
+    database: wordpress
+    username: wordpress
+    password: wordpress
+  primary:
+    persistence:
+      storageClass: "nfs-client-db"
+      enabled: true
+      size: 8Gi
+
+wordpress:
+  replicaCount: 1
+  siteTitle: "ApoLand Best Of the World"
+  adminUser: "apo"
+  adminPassword: "password"
+  adminEmail: "alimoviee@gmail.com"
+
+  image:
+    repository: apoolouis8/wordpress
+    tag: "prod-1.0.1"
+    pullPolicy: IfNotPresent
+    imagePullSecrets: regcred
+
+  service:
+    type: ClusterIP
+    port: 80
+  ingress:
+    enabled: true
+    ingressClassName: nginx-dmz
+    annotations:
+      cert-manager.io/cluster-issuer: acme-ovh
+      nginx.ingress.kubernetes.io/proxy-body-size: "64m"
+    hosts:
+      - host: prod-wordpress.noor-solutions.fr
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - hosts:
+          - prod-wordpress.noor-solutions.fr
+        secretName: "wp-prod-tls"
+
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  hpa:
+    enabled: true
+
+    minReplicas: 1
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  pvc:
+    size: 5Gi
+    accessMode: ReadWriteMany
+    storageClass: nfs-client-db
+    volumeMode: Filesystem
+    annotations: {}  # Changed from [] to {}
+  job:
+    image: apoolouis8/wp-job:1.0.0
+    uid: 33
+    gid: 33
+    clonePath: "/"
