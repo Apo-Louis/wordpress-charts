@@ -1,5 +1,3 @@
-# Job that clone custom plugins + install choosed official plugins
-# How to improve : Made it more secure for passwords
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -17,15 +15,13 @@ spec:
         fsGroup: {{ .Values.wordpress.job.gid }}
       containers:
         - name: "{{ .Release.Name }}-job"
-
           image: {{ .Values.wordpress.job.image }}
           command: ["/bin/sh", "-c"]
           args:
             - |
-
-
              attempt=1
              max_attempts=10
+
              until mariadb-admin ping -h{{ .Release.Name }}-mariadb -u${MYSQL_USER} -p${MYSQL_PASSWORD}; do
                if [ $attempt -eq $max_attempts ]; then
                  echo "MariaDB connection failed after $max_attempts attempts"
@@ -36,19 +32,21 @@ spec:
                attempt=$((attempt + 1))
              done
 
-              # Clone custom plugins repository
+              # Clone custom plugins repository with specific commit
               cd $ROOT_DIR
-
               echo "Cloning custom wordpress repository..."
-              echo "Using repo: {{ .Values.github.wp_repo }} branch: {{ .Values.github.branch }}"
-              if ! git clone -b {{ .Values.github.branch }} https://${GIT_TOKEN}@github.com/{{ .Values.github.wp_repo }}.git; then
+              echo "Using repo: {{ .Values.github.wp_repo }} commit: {{ .Values.github.commit }}"
+              if ! git clone --depth 1 https://${GIT_TOKEN}@github.com/{{ .Values.github.wp_repo }}.git .; then
                 error_exit "Failed to clone custom plugins repository" 60
               fi
 
+              cd $ROOT_DIR
+              git fetch --depth 1 origin {{ .Values.github.commit }}
+              if ! git checkout {{ .Values.github.commit }}; then
+                error_exit "Failed to checkout commit {{ .Values.github.commit }}" 61
+              fi
               cd /var/www/html
-
-              /tmp/wordpress/scripts/./plugin_install.sh
-
+              /wordpress/scripts/./plugin_install.sh
           env:
             - name: ROOT_DIR
               value: /tmp

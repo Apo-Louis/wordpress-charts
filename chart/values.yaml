@@ -2,6 +2,7 @@ github: # Needed for the job that clone custom plugins and mad share it via a PV
   wp_repo: "Apo-Louis/wordpress"
   branch: "dev"
   token: ""
+  commit: ""
 
 mariadb:
   global:
