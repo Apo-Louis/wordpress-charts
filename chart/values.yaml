@@ -2,8 +2,7 @@ github: # Needed for the job that clone custom plugins and mad share it via a PV
   wp_repo: "Apo-Louis/wordpress"
   branch: "dev"
   token: ""
-  commit: ""
-
+  commit: "ad9006e95dca0bfd1fe29da6e22145b7847e6259"
 mariadb:
   global:
     defaultStorageClass: "nfs-client-db"
@@ -18,20 +17,17 @@ mariadb:
       storageClass: "nfs-client-db"
       enabled: true
       size: 8Gi
-
 wordpress:
   replicaCount: 1
   siteTitle: "ApoLand Best Of the World"
   adminUser: "apo"
   adminPassword: "password"
   adminEmail: "alimoviee@gmail.com"
-
   image:
     repository: apoolouis8/wordpress
-    tag: "prod-1.0.1"
+    tag: "prod-ad9006e"
     pullPolicy: IfNotPresent
     imagePullSecrets: regcred
-
   service:
     type: ClusterIP
     port: 80
@@ -50,7 +46,6 @@ wordpress:
       - hosts:
           - prod-wordpress.noor-solutions.fr
         secretName: "wp-prod-tls"
-
   resources:
     limits:
       cpu: "500m"
@@ -63,7 +58,6 @@ wordpress:
   affinity: {}
   hpa:
     enabled: true
-
     minReplicas: 1
     maxReplicas: 10
     targetCPUUtilizationPercentage: 80
@@ -73,7 +67,7 @@ wordpress:
     accessMode: ReadWriteMany
     storageClass: nfs-client-db
     volumeMode: Filesystem
-    annotations: {}  # Changed from [] to {}
+    annotations: {} # Changed from [] to {}
   job:
     image: apoolouis8/wp-job:1.0.0
     uid: 33
