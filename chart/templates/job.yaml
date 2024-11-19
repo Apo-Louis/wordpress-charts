@@ -37,11 +37,12 @@ spec:
 
               echo "Cloning custom wordpress repository..."
               echo "Using repo: {{ .Values.github.wp_repo }} commit: {{ .Values.github.commit }}"
-              if ! git clone --depth 1 https://${GIT_TOKEN}@github.com/{{ .Values.github.wp_repo }}.git; then
+              if ! git clone  https://${GIT_TOKEN}@github.com/{{ .Values.github.wp_repo }}.git; then
                 error_exit "Failed to clone custom plugins repository" 60
               fi
 
-              git fetch --depth 1 origin {{ .Values.github.commit }}
+              cd wordpress/
+
               if ! git checkout {{ .Values.github.commit }}; then
                 error_exit "Failed to checkout commit {{ .Values.github.commit }}" 61
               fi
