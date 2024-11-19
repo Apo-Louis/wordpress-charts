@@ -37,8 +37,6 @@ spec:
                 attempt=$((attempt + 1))
               done
 
-              cd ${temp_dir}
-
               # Clone custom plugins repository
               echo "Cloning custom wordpress repository..."
               echo "Using repo: {{ .Values.github.wp_repo }} commit: {{ .Values.github.commit }}"
@@ -72,12 +70,12 @@ spec:
           volumeMounts:
             - name: wordpress-storage
               mountPath: /var/www/html
-            - name: temp_dir
+            - name: temp-dir
               mountPath: /wordpress
       volumes:
         - name: wordpress-storage
           persistentVolumeClaim:
             claimName: "{{ .Release.Name }}-pvc"
-        - name: temp_dir
+        - name: temp-dir
           emptyDir: {}
       restartPolicy: OnFailure
