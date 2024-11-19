@@ -16,6 +16,7 @@ spec:
       containers:
         - name: "{{ .Release.Name }}-job"
           image: {{ .Values.wordpress.job.image }}
+          imagePullPolicy: Always
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -33,23 +34,20 @@ spec:
              done
 
               # Clone custom plugins repository with specific commit
-              cd /tmp
+
               echo "Cloning custom wordpress repository..."
               echo "Using repo: {{ .Values.github.wp_repo }} commit: {{ .Values.github.commit }}"
               if ! git clone --depth 1 https://${GIT_TOKEN}@github.com/{{ .Values.github.wp_repo }}.git; then
                 error_exit "Failed to clone custom plugins repository" 60
               fi
 
-              cd $ROOT_DIR
               git fetch --depth 1 origin {{ .Values.github.commit }}
               if ! git checkout {{ .Values.github.commit }}; then
                 error_exit "Failed to checkout commit {{ .Values.github.commit }}" 61
               fi
               cd /var/www/html
-              ${ROOT_DIR}/scripts/./plugin_install.sh
+              /wordpress/wordpress/scripts/./plugin_install.sh
           env:
-            - name: ROOT_DIR
-              value: /tmp/wordpress
             - name: GIT_TERMINAL_PROMPT
               value: "0"
           envFrom:
