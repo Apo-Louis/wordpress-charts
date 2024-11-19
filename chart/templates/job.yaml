@@ -20,37 +20,50 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-             attempt=1
-             max_attempts=10
+              # Wait for MariaDB
+              attempt=1
+              max_attempts=10
 
-             until mariadb-admin ping -h{{ .Release.Name }}-mariadb -u${WORDPRESS_DB_USER} -p${WORDPRESS_DB_PASSWORD}; do
-               if [ $attempt -eq $max_attempts ]; then
-                 echo "MariaDB connection failed after $max_attempts attempts"
-                 exit 1
-               fi
-               echo "Attempt $attempt: MariaDB not ready, waiting 20s..."
-               sleep 20
-               attempt=$((attempt + 1))
-             done
 
-              # Clone custom plugins repository with specific commit
 
+
+              until mariadb-admin ping -h{{ .Release.Name }}-mariadb -u${WORDPRESS_DB_USER} -p${WORDPRESS_DB_PASSWORD}; do
+                if [ $attempt -eq $max_attempts ]; then
+                  echo "MariaDB connection failed after $max_attempts attempts"
+                  exit 1
+                fi
+                echo "Attempt $attempt: MariaDB not ready, waiting 20s..."
+                sleep 20
+                attempt=$((attempt + 1))
+              done
+
+              cd ${temp_dir}
+
+              # Clone custom plugins repository
               echo "Cloning custom wordpress repository..."
               echo "Using repo: {{ .Values.github.wp_repo }} commit: {{ .Values.github.commit }}"
-              if ! git clone  https://${GIT_TOKEN}@github.com/{{ .Values.github.wp_repo }}.git; then
-                error_exit "Failed to clone custom plugins repository" 60
+
+              if ! git clone https://${GIT_TOKEN}@github.com/{{ .Values.github.wp_repo }}.git $REPO_LOCATION; then
+                echo "Failed to clone repository"
+                exit 60
               fi
 
-              cd wordpress/
-
+              cd $REPO_LOCATION
               if ! git checkout {{ .Values.github.commit }}; then
-                error_exit "Failed to checkout commit {{ .Values.github.commit }}" 61
+                echo "Failed to checkout commit"
+                exit 61
               fi
+
               cd /var/www/html
-              /wordpress/wordpress/scripts/./plugin_install.sh
+              # Execute the installation script
+              wordpress/scripts/plugin_install.sh
           env:
             - name: GIT_TERMINAL_PROMPT
               value: "0"
+            - name: TEMP_DIR
+              value: /wordpress
+            - name: REPO_LOCATION
+              value: /wordpress/repo
           envFrom:
             - secretRef:
                 name: "{{ .Release.Name }}-secrets"
@@ -59,12 +72,12 @@ spec:
           volumeMounts:
             - name: wordpress-storage
               mountPath: /var/www/html
-            - name: temp-storage
-              mountPath: /tmp
+            - name: temp_dir
+              mountPath: /wordpress
       volumes:
         - name: wordpress-storage
           persistentVolumeClaim:
             claimName: "{{ .Release.Name }}-pvc"
-        - name: temp-storage
+        - name: temp_dir
           emptyDir: {}
       restartPolicy: OnFailure
