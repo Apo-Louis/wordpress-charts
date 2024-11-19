@@ -1,7 +1,7 @@
 github: # Needed for the job that clone custom plugins and mad share it via a PVC for all pods (lighter wp images)
   wp_repo: "Apo-Louis/wordpress"
   token: ""
-  commit: "6d2444dc8c0d87ebe120fc8c3dccf302158987d8"
+  commit: "844d418b7fce67e84b11da900933ef60ffdc83e8"
 mariadb:
   global:
     defaultStorageClass: "nfs-client-db"
@@ -24,7 +24,7 @@ wordpress:
   adminEmail: "alimoviee@gmail.com"
   image:
     repository: apoolouis8/wordpress
-    tag: "prod-6d2444d"
+    tag: "prod-844d418"
     pullPolicy: IfNotPresent
     imagePullSecrets: regcred
   service:
