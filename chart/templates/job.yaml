@@ -23,7 +23,7 @@ spec:
              attempt=1
              max_attempts=10
 
-             until mariadb-admin ping -h{{ .Release.Name }}-mariadb -u${MYSQL_USER} -p${MYSQL_PASSWORD}; do
+             until mariadb-admin ping -h{{ .Release.Name }}-mariadb -u${WORDPRESS_DB_USER} -p${WORDPRESS_DB_PASSWORD}; do
                if [ $attempt -eq $max_attempts ]; then
                  echo "MariaDB connection failed after $max_attempts attempts"
                  exit 1
