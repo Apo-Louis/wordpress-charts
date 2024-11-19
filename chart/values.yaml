@@ -1,6 +1,5 @@
 github: # Needed for the job that clone custom plugins and mad share it via a PVC for all pods (lighter wp images)
   wp_repo: "Apo-Louis/wordpress"
-  branch: "dev"
   token: ""
   commit: "ad9006e95dca0bfd1fe29da6e22145b7847e6259"
 mariadb:
