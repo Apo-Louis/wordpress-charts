@@ -54,7 +54,7 @@ spec:
 
               cd /var/www/html
               # Execute the installation script
-              wordpress/scripts/plugin_install.sh
+              ${REPO_LOCATION}/scripts/plugin_install.sh
           env:
             - name: GIT_TERMINAL_PROMPT
               value: "0"
