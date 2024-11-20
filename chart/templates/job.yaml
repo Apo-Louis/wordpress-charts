@@ -36,6 +36,11 @@ spec:
                 attempt=$((attempt + 1))
               done
 
+              echo "Cleaning up existing repository directory..."
+              if [ -d "$REPO_LOCATION" ]; then
+                rm -rf "$REPO_LOCATION"
+              fi
+
               # Clone custom plugins repository
               echo "Cloning custom wordpress repository..."
               echo "Using repo: {{ .Values.github.wp_repo }} commit: {{ .Values.github.commit }}"
